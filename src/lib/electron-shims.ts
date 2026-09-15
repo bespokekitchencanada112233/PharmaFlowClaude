@@ -4,6 +4,8 @@
 export function applyElectronShims() {
   if (typeof navigator === "undefined") return;
 
+  console.log("[electron-shims] applying shims, build marker: focus-neutered-v2");
+
   // Electron's Chromium can return a null lock from navigator.locks.request,
   // which causes gotrue-js's session lock to hang forever — freezing the UI
   // (including typing in the login form) the moment Supabase tries to read
