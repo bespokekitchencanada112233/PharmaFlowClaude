@@ -1,8 +1,11 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider } from "@tanstack/react-router";
+import { applyElectronShims } from "./lib/electron-shims";
 import { getRouter } from "./router";
 import "./styles.css";
+
+applyElectronShims();
 
 const rootElement = document.getElementById("root");
 

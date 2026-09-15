@@ -1,119 +1,161 @@
-const { app, BrowserWindow } = require('electron');
-const path = require('path');
-const http = require('http');
-const fs = require('fs');
+const { app, BrowserWindow, Menu, shell } = require("electron");
+const path = require("path");
+const http = require("http");
+const fs = require("fs");
 
-const PORT = 0; // 0 = auto-assign
+const CLIENT_DIR = path.join(__dirname, "..", "dist", "client");
+const APP_ICON = path.join(CLIENT_DIR, "icon-512.png");
 
-// Simple static file server
-function serveStatic(rootDir) {
+const MIME_TYPES = {
+  ".html": "text/html",
+  ".js": "application/javascript",
+  ".mjs": "application/javascript",
+  ".css": "text/css",
+  ".json": "application/json",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".svg": "image/svg+xml",
+  ".ico": "image/x-icon",
+  ".woff2": "font/woff2",
+  ".woff": "font/woff",
+  ".ttf": "font/ttf",
+  ".webmanifest": "application/manifest+json",
+};
+
+// Serves the pre-built SPA from disk, falling back to index.html for any
+// extension-less path so client-side routes survive a hard reload.
+function createStaticServer(rootDir) {
   return http.createServer((req, res) => {
-    const pathname = new URL(req.url, 'http://localhost').pathname;
+    const pathname = decodeURIComponent(new URL(req.url, "http://localhost").pathname);
+    const requestedPath = path.normalize(path.join(rootDir, pathname));
 
-    // Default to index.html for SPA routing
-    let filePath = path.join(rootDir, pathname);
-    if (pathname === '/' || pathname === '/index.html') {
-      filePath = path.join(rootDir, 'index.html');
-    }
-
-    // Security: prevent directory traversal
-    if (!filePath.startsWith(rootDir)) {
-      res.statusCode = 403;
-      res.end('Forbidden');
+    if (!requestedPath.startsWith(rootDir)) {
+      res.writeHead(403).end("Forbidden");
       return;
     }
 
-    // If it's a directory, look for index.html
-    if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
-      filePath = path.join(filePath, 'index.html');
-    }
-
-    // For SPA routes that don't exist as files, serve index.html
-    if (!fs.existsSync(filePath)) {
-      // Check if it's likely an asset (has extension)
-      const ext = path.extname(pathname);
-      if (!ext || ext === '.html') {
-        filePath = path.join(rootDir, 'index.html');
-      } else {
-        res.statusCode = 404;
-        res.end('Not found');
-        return;
-      }
+    let filePath;
+    if (pathname === "/") {
+      filePath = path.join(rootDir, "index.html");
+    } else if (fs.existsSync(requestedPath) && fs.statSync(requestedPath).isFile()) {
+      filePath = requestedPath;
+    } else if (fs.existsSync(path.join(requestedPath, "index.html"))) {
+      filePath = path.join(requestedPath, "index.html");
+    } else if (!path.extname(pathname)) {
+      // No file extension and nothing on disk: treat as a client-side route.
+      filePath = path.join(rootDir, "index.html");
+    } else {
+      res.writeHead(404).end("Not found");
+      return;
     }
 
     const ext = path.extname(filePath).toLowerCase();
-    const mimeTypes = {
-      '.html': 'text/html',
-      '.js': 'application/javascript',
-      '.css': 'text/css',
-      '.json': 'application/json',
-      '.png': 'image/png',
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.gif': 'image/gif',
-      '.svg': 'image/svg+xml',
-      '.ico': 'image/x-icon',
-      '.woff2': 'font/woff2',
-      '.woff': 'font/woff',
-      '.ttf': 'font/ttf',
-      '.webmanifest': 'application/manifest+json',
-    };
-
-    res.setHeader('Content-Type', mimeTypes[ext] || 'application/octet-stream');
-    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.setHeader("Content-Type", MIME_TYPES[ext] || "application/octet-stream");
+    res.setHeader("Cache-Control", ext === ".html" ? "no-cache" : "public, max-age=31536000");
 
     const stream = fs.createReadStream(filePath);
     stream.pipe(res);
-    stream.on('error', () => {
-      res.statusCode = 500;
-      res.end('Internal error');
+    stream.on("error", () => {
+      res.writeHead(500).end("Internal error");
     });
   });
 }
 
-let server;
-let serverPort;
+function buildMenu() {
+  const isMac = process.platform === "darwin";
+  const template = [
+    ...(isMac ? [{ role: "appMenu" }] : []),
+    {
+      label: "View",
+      submenu: [
+        { role: "reload" },
+        { role: "forceReload" },
+        { type: "separator" },
+        { role: "toggleDevTools" },
+        { type: "separator" },
+        { role: "resetZoom" },
+        { role: "zoomIn" },
+        { role: "zoomOut" },
+        { type: "separator" },
+        { role: "togglefullscreen" },
+      ],
+    },
+    { role: "windowMenu" },
+  ];
+  return Menu.buildFromTemplate(template);
+}
 
-function createWindow() {
-  const win = new BrowserWindow({
+let server;
+let mainWindow;
+
+function createWindow(port) {
+  mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
+    minWidth: 960,
+    minHeight: 600,
+    icon: APP_ICON,
+    title: "Umar Medicine ERP",
+    backgroundColor: "#ffffff",
+    autoHideMenuBar: true,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
+      sandbox: true,
     },
-    icon: path.join(__dirname, '..', 'dist', 'client', 'icon-192.png'),
-    title: 'Umar Medicine ERP',
   });
 
-  // Load from the local server
-  win.loadURL(`http://localhost:${serverPort}/`);
+  mainWindow.loadURL(`http://127.0.0.1:${port}/`);
 
-  // Optional: open DevTools for debugging
-  // win.webContents.openDevTools();
+  // Open external links (e.g. WhatsApp share, "or" links) in the OS browser
+  // instead of navigating the app window away from the SPA.
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: "deny" };
+  });
 }
 
-app.whenReady().then(() => {
-  const staticRoot = path.join(__dirname, '..', 'dist', 'client');
-  server = serveStatic(staticRoot);
-  server.listen(PORT, '127.0.0.1', () => {
-    serverPort = server.address().port;
-    console.log(`Server running on http://localhost:${serverPort}/`);
-    createWindow();
+function startServerAndWindow() {
+  server = createStaticServer(CLIENT_DIR);
+  server.listen(0, "127.0.0.1", () => {
+    const { port } = server.address();
+    console.log(`[electron] serving ${CLIENT_DIR} on http://127.0.0.1:${port}/`);
+    createWindow(port);
   });
+}
 
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
     }
   });
-});
 
-app.on('window-all-closed', () => {
-  if (server) {
-    server.close();
-  }
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
+  app.whenReady().then(() => {
+    if (!fs.existsSync(path.join(CLIENT_DIR, "index.html"))) {
+      throw new Error(
+        `Electron client build not found at ${CLIENT_DIR}. Run "npm run electron:build" first.`,
+      );
+    }
+
+    Menu.setApplicationMenu(buildMenu());
+    startServerAndWindow();
+
+    app.on("activate", () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        startServerAndWindow();
+      }
+    });
+  });
+
+  app.on("window-all-closed", () => {
+    if (server) server.close();
+    if (process.platform !== "darwin") app.quit();
+  });
+}

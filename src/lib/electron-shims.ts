@@ -1,20 +1,6 @@
 // Browser shims applied only in the Electron desktop build.
 // Loaded first by src/electron-entry.tsx so it runs before any Supabase code.
 
-declare global {
-  interface Window {
-    electronAPI?: {
-      signInWithGoogle: (
-        brokerUrl: string,
-        redirectUri: string,
-      ) => Promise<
-        | { ok: true; access_token: string; refresh_token: string }
-        | { ok: false; error: string }
-      >;
-    };
-  }
-}
-
 export function applyElectronShims() {
   if (typeof navigator === "undefined") return;
 
@@ -31,5 +17,4 @@ export function applyElectronShims() {
   } catch (e) {
     console.warn("[electron-shims] could not remove navigator.locks", e);
   }
-
 }
