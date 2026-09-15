@@ -1,3 +1,12 @@
+// NOTE: package.json pins electron to exactly 30.5.1. Electron 33+ (Chromium
+// 148, confirmed on 33.4.11 and 35.7.5) has a renderer bug where any
+// HTMLElement.focus() call on this app's page permanently hangs the
+// renderer's JS thread the instant TanStack Router's <RouterProvider> is
+// mounted -- reproduced with a minimal root-only route tree, ruled out our
+// own code (CSS, React, Supabase, service worker, GPU/accessibility/autofill
+// switches all irrelevant). Only fix found was downgrading Electron itself.
+// Do not bump this past 30.x without re-testing that typing in the login
+// form actually works in a real packaged build.
 const { app, BrowserWindow, Menu, shell } = require("electron");
 const path = require("path");
 const http = require("http");
@@ -114,6 +123,10 @@ function createWindow(port) {
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: "deny" };
+  });
+
+  mainWindow.webContents.on("console-message", (_event, _level, message) => {
+    console.log("[renderer]", message);
   });
 }
 
