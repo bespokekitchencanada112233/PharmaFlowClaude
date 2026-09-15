@@ -27,6 +27,7 @@ export default defineConfig({
     alias: {
       "@tanstack/react-start": resolve(__dirname, "src/lib/electron-server-fn-stub.ts"),
       "@/lib/users.functions": resolve(__dirname, "src/lib/users.functions.electron.ts"),
+      "@/components/ui/dialog": resolve(__dirname, "src/components/ui/dialog.electron.tsx"),
     },
   },
   build: {

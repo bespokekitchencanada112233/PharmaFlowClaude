@@ -8,22 +8,24 @@
 // fixed this specific case (confirmed: typing a full email + password in
 // the login form). Do not bump this past 30.x without re-testing that.
 //
-// KNOWN UNRESOLVED ISSUE: opening a dialog via a REAL mouse click (as a
-// user actually does -- reproduced with webContents.sendInputEvent, never
-// with a synthetic element.click(), which is why earlier testing missed
-// it) still hangs the renderer on this same Electron version, even with:
-//   - element.focus() neutered globally (src/lib/electron-shims.ts)
-//   - the triggering button prevented from taking native focus on mousedown
-//   - Radix FocusScope's trapping and useFocusGuards both force-disabled
-//   - a fully custom, Radix-free dialog with zero focusable content inside
-// A plain toast notification (also portal-based) does NOT hang on the same
-// real click, so it's specific to the dialog's fixed/centered overlay
-// content somehow, not to focus, portals, or re-renders in general -- but
-// the exact trigger inside that remains unidentified. Next steps for
-// whoever picks this up: bisect the dialog's own CSS/layout (position:
-// fixed, centering transform, z-index, size) against the working toast to
-// find what's actually different, ideally with DevTools open on a REAL
-// click (not scripted) to catch a stack trace at the point of the hang.
+// SECOND BUG, fully isolated: ReactDOM.createPortal(..., document.body),
+// when the state update that mounts it is triggered by a REAL/trusted
+// native mouse click (reproduced with webContents.sendInputEvent -- never
+// with a synthetic element.click(), which is why this was missed for a
+// long time), permanently hangs this same Electron/Chromium build's
+// renderer -- independent of focus, FocusScope, or content (reproduced
+// down to a single hidden, empty <span> portaled to document.body). A
+// plain inline state update on the same click, with no portal, works fine.
+// Fix: src/components/ui/dialog.electron.tsx replaces the Radix-based
+// dialog.tsx for the Electron build only (aliased in
+// electron.vite.config.ts) with one that never calls createPortal,
+// rendering inline and relying on CSS `position: fixed` to appear as a
+// full-screen overlay instead. Verified end-to-end with real mouse clicks
+// and real keystrokes (open dialog, click into a field, type, stays
+// responsive). Any other component using createPortal in the Electron
+// build (Popover, DropdownMenu, Sheet, AlertDialog, etc.) needs the same
+// treatment -- check for this class of hang if one of those starts
+// freezing on a real click.
 const { app, BrowserWindow, Menu, shell } = require("electron");
 const path = require("path");
 const http = require("http");
