@@ -33,6 +33,9 @@ desktop-download-parts/
 # Vercel
 .vercel
 
+# Supabase CLI local state
+supabase/.temp
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
