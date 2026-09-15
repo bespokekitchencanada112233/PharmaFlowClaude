@@ -1,0 +1,1 @@
+UPDATE public.company_settings SET name='UMAR MEDICINE COMPANY';

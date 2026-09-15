@@ -1,0 +1,297 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design system definition.
+ *
+ * The @theme inline block maps CSS custom properties to Tailwind utility
+ * classes (e.g. --color-primary -> bg-primary, text-primary).
+ *
+ * The :root and .dark blocks define the actual color values using oklch.
+ * All colors MUST use oklch format.
+ *
+ * To add a new semantic color:
+ * 1. Add the variable to :root (light value) and .dark (dark value)
+ * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 0.5rem;
+  --background: oklch(0.99 0.005 250);
+  --foreground: oklch(0.18 0.04 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.04 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.04 260);
+  --primary: oklch(0.28 0.09 260);
+  --primary-foreground: oklch(0.98 0.01 250);
+  --secondary: oklch(0.95 0.015 250);
+  --secondary-foreground: oklch(0.28 0.09 260);
+  --muted: oklch(0.96 0.01 250);
+  --muted-foreground: oklch(0.5 0.03 258);
+  --accent: oklch(0.55 0.13 245);
+  --accent-foreground: oklch(0.99 0.005 250);
+  --success: oklch(0.62 0.16 150);
+  --warning: oklch(0.75 0.16 75);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(0.929 0.013 255.508);
+  --input: oklch(0.929 0.013 255.508);
+  --ring: oklch(0.704 0.04 256.788);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.22 0.06 260);
+  --sidebar-foreground: oklch(0.95 0.01 250);
+  --sidebar-primary: oklch(0.55 0.13 245);
+  --sidebar-primary-foreground: oklch(0.99 0.005 250);
+  --sidebar-accent: oklch(0.3 0.07 260);
+  --sidebar-accent-foreground: oklch(0.99 0.005 250);
+  --sidebar-border: oklch(0.3 0.05 260);
+  --sidebar-ring: oklch(0.55 0.13 245);
+}
+
+/* Soft light-blue theme — easier on the eyes than pure white */
+.theme-blue {
+  --background: oklch(0.955 0.03 235);
+  --foreground: oklch(0.22 0.06 260);
+  --card: oklch(0.985 0.018 235);
+  --popover: oklch(0.985 0.018 235);
+  --secondary: oklch(0.92 0.035 235);
+  --muted: oklch(0.93 0.032 235);
+  --muted-foreground: oklch(0.42 0.05 258);
+  --border: oklch(0.86 0.035 235);
+  --input: oklch(0.9 0.03 235);
+}
+
+/* Sepia — warm paper tone, easy reading */
+.theme-sepia {
+  --background: oklch(0.955 0.03 85);
+  --foreground: oklch(0.25 0.04 50);
+  --card: oklch(0.98 0.022 85);
+  --popover: oklch(0.98 0.022 85);
+  --secondary: oklch(0.92 0.04 85);
+  --muted: oklch(0.93 0.035 85);
+  --muted-foreground: oklch(0.45 0.04 60);
+  --border: oklch(0.86 0.04 80);
+  --input: oklch(0.9 0.035 85);
+}
+
+/* Mint — soft green, calming */
+.theme-mint {
+  --background: oklch(0.96 0.025 165);
+  --foreground: oklch(0.22 0.05 200);
+  --card: oklch(0.985 0.018 165);
+  --popover: oklch(0.985 0.018 165);
+  --secondary: oklch(0.92 0.035 165);
+  --muted: oklch(0.93 0.03 165);
+  --muted-foreground: oklch(0.42 0.04 200);
+  --border: oklch(0.86 0.035 165);
+  --input: oklch(0.9 0.03 165);
+}
+
+/* Lavender — gentle purple, low strain */
+.theme-lavender {
+  --background: oklch(0.955 0.025 300);
+  --foreground: oklch(0.22 0.05 290);
+  --card: oklch(0.985 0.018 300);
+  --popover: oklch(0.985 0.018 300);
+  --secondary: oklch(0.92 0.035 300);
+  --muted: oklch(0.93 0.03 300);
+  --muted-foreground: oklch(0.42 0.04 290);
+  --border: oklch(0.86 0.035 300);
+  --input: oklch(0.9 0.03 300);
+}
+
+.dark {
+  --background: oklch(0.129 0.042 264.695);
+  --foreground: oklch(0.984 0.003 247.858);
+  --card: oklch(0.208 0.042 265.755);
+  --card-foreground: oklch(0.984 0.003 247.858);
+  --popover: oklch(0.208 0.042 265.755);
+  --popover-foreground: oklch(0.984 0.003 247.858);
+  --primary: oklch(0.929 0.013 255.508);
+  --primary-foreground: oklch(0.208 0.042 265.755);
+  --secondary: oklch(0.279 0.041 260.031);
+  --secondary-foreground: oklch(0.984 0.003 247.858);
+  --muted: oklch(0.279 0.041 260.031);
+  --muted-foreground: oklch(0.704 0.04 256.788);
+  --accent: oklch(0.279 0.041 260.031);
+  --accent-foreground: oklch(0.984 0.003 247.858);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.551 0.027 264.364);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.208 0.042 265.755);
+  --sidebar-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-accent: oklch(0.279 0.041 260.031);
+  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.551 0.027 264.364);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* Make wide tables horizontally scrollable on small screens without code changes per page */
+@media (max-width: 768px) {
+  table { display: block; overflow-x: auto; white-space: nowrap; max-width: 100%; }
+  .print-area { padding: 1rem !important; }
+}
+
+@page { size: A4; margin: 12mm; }
+@media print {
+  html, body {
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+    overflow: visible !important;
+  }
+
+  /* Hide everything; only the print-area subtree stays visible. Using
+     visibility (not display:none) so the print-area renders even when it
+     is nested deep inside the app shell rather than a direct body child. */
+  body * { visibility: hidden !important; }
+  .print-area, .print-area * { visibility: visible !important; }
+  .print-area {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+  }
+  .no-print, .print-hide { display: none !important; }
+
+  .print-area {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 13px;
+    border: none !important;
+    background: #fff !important;
+    color: #000 !important;
+    overflow: visible !important;
+  }
+  .print-area > *,
+  .print-area > .flex,
+  .print-area > .grid {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  .print-area table {
+    display: table !important;
+    width: 100% !important;
+    max-width: none !important;
+    table-layout: auto;
+    overflow: visible !important;
+    white-space: normal !important;
+  }
+  .print-area thead { display: table-row-group !important; }
+  .print-area tbody { display: table-row-group !important; }
+  .print-area tfoot { display: table-row-group !important; }
+  .print-area tr { display: table-row !important; }
+  .print-area th, .print-area td { display: table-cell !important; }
+
+  .print-area h1 { font-size: 18px; }
+  .print-area thead th { padding: 3px 6px !important; }
+  .print-area tbody td { padding: 2px 6px !important; line-height: 1.2; }
+  .print-area tfoot td { padding: 3px 6px !important; }
+  .print-area .py-6 { padding-top: 8px !important; padding-bottom: 8px !important; }
+  .print-area .pb-6 { padding-bottom: 8px !important; }
+  .print-area .mt-8 { margin-top: 10px !important; }
+  .print-area .mt-12 { margin-top: 14px !important; }
+  .print-area .pt-6 { padding-top: 8px !important; }
+
+  .print-area tr { page-break-inside: avoid; }
+  .print-area .page-break,
+  .print-area [style*="page-break-after"] {
+    break-after: page;
+    page-break-after: always;
+  }
+}
+
+
+
+
+
+/* Remove number input spinner arrows app-wide */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
