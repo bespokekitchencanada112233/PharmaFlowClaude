@@ -8,8 +8,8 @@ import {
   useState,
   type KeyboardEvent,
 } from "react";
-import { createPortal } from "react-dom";
 import { Input } from "@/components/ui/input";
+import { ConditionalPortal } from "@/components/ConditionalPortal";
 import type { Customer } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -22,14 +22,10 @@ interface Props {
   getSuffix?: (customer: Customer) => string;
 }
 
-export const CustomerCombobox = forwardRef<HTMLInputElement, Props>(function CustomerCombobox({
-  customers,
-  value,
-  onChange,
-  placeholder,
-  className,
-  getSuffix,
-}, forwardedRef) {
+export const CustomerCombobox = forwardRef<HTMLInputElement, Props>(function CustomerCombobox(
+  { customers, value, onChange, placeholder, className, getSuffix },
+  forwardedRef,
+) {
   const inputRef = useRef<HTMLInputElement>(null);
   useImperativeHandle(forwardedRef, () => inputRef.current as HTMLInputElement, []);
   const justCommittedRef = useRef(false);
@@ -86,9 +82,7 @@ export const CustomerCombobox = forwardRef<HTMLInputElement, Props>(function Cus
   }, [open]);
 
   function commit(c?: Customer) {
-    const pick =
-      c ??
-      (active >= 0 ? matches[active] : matches[0]);
+    const pick = c ?? (active >= 0 ? matches[active] : matches[0]);
     if (!pick) return;
     justCommittedRef.current = true;
     onChange(pick.id);
@@ -159,10 +153,8 @@ export const CustomerCombobox = forwardRef<HTMLInputElement, Props>(function Cus
         placeholder={placeholder ?? "Search customer…"}
         autoComplete="off"
       />
-      {open &&
-        rect &&
-        typeof document !== "undefined" &&
-        createPortal(
+      {open && rect && typeof document !== "undefined" && (
+        <ConditionalPortal>
           <div
             style={{
               position: "fixed",
@@ -177,9 +169,7 @@ export const CustomerCombobox = forwardRef<HTMLInputElement, Props>(function Cus
             className="max-h-72 overflow-auto rounded-md border bg-popover shadow-md"
           >
             {matches.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-muted-foreground">
-                No customers found
-              </div>
+              <div className="px-3 py-2 text-sm text-muted-foreground">No customers found</div>
             ) : (
               matches.map((c, i) => (
                 <button
@@ -195,14 +185,12 @@ export const CustomerCombobox = forwardRef<HTMLInputElement, Props>(function Cus
                   onMouseEnter={() => setActive(i)}
                   className={cn(
                     "w-full text-left px-3 py-2 text-sm flex justify-between gap-3 items-center",
-                    i === active
-                      ? "bg-accent text-accent-foreground"
-                      : "hover:bg-muted",
+                    i === active ? "bg-accent text-accent-foreground" : "hover:bg-muted",
                   )}
                 >
                   <span className="truncate font-medium">{c.name}</span>
                   {(() => {
-                    const suffix = getSuffix ? getSuffix(c) : c.phone ?? "";
+                    const suffix = getSuffix ? getSuffix(c) : (c.phone ?? "");
                     return suffix ? (
                       <span
                         className={cn(
@@ -217,9 +205,9 @@ export const CustomerCombobox = forwardRef<HTMLInputElement, Props>(function Cus
                 </button>
               ))
             )}
-          </div>,
-          document.body,
-        )}
+          </div>
+        </ConditionalPortal>
+      )}
     </div>
   );
 });

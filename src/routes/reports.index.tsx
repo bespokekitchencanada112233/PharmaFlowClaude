@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import { useStore, fmt, fmtDate, fmtDateTime } from "@/lib/store";
 import { PageHeader } from "@/components/AppLayout";
+import { ConditionalPortal } from "@/components/ConditionalPortal";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,13 @@ export const Route = createFileRoute("/reports/")({
 type AreaRow = { id: string; name: string; phone?: string; balance: number };
 type AreaGroup = { area: string; rows: AreaRow[] };
 
-type SalesItemRow = { productId: string; name: string; qty: number; salePrice: number; total: number };
+type SalesItemRow = {
+  productId: string;
+  name: string;
+  qty: number;
+  salePrice: number;
+  total: number;
+};
 type SalesCompanyRow = { company: string; qty: number; total: number; items: SalesItemRow[] };
 
 type CollectionRow = {
@@ -120,7 +126,10 @@ function ReportsPage() {
   const today = new Date().toISOString().slice(0, 10);
   const firstOfMonth = today.slice(0, 8) + "01";
   type SalesPreset = "today" | "week" | "month" | "custom";
-  const [salesPreset, setSalesPreset] = usePersistedState<SalesPreset>("reports:sales:preset", "month");
+  const [salesPreset, setSalesPreset] = usePersistedState<SalesPreset>(
+    "reports:sales:preset",
+    "month",
+  );
   const [customFrom, setCustomFrom] = usePersistedState("reports:sales:from", firstOfMonth);
   const [customTo, setCustomTo] = usePersistedState("reports:sales:to", today);
   const [salesCompany, setSalesCompany] = usePersistedState("reports:sales:company", "all");
@@ -201,12 +210,16 @@ function ReportsPage() {
 
   const salesCompanyOptions = useMemo(() => {
     const set = new Set<string>();
-    for (const p of db.products) set.add((p.company || "— No company —").trim() || "— No company —");
+    for (const p of db.products)
+      set.add((p.company || "— No company —").trim() || "— No company —");
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [db.products]);
 
   const salesByCompanyFiltered = useMemo(
-    () => (salesCompany === "all" ? salesByCompany : salesByCompany.filter((r) => r.company === salesCompany)),
+    () =>
+      salesCompany === "all"
+        ? salesByCompany
+        : salesByCompany.filter((r) => r.company === salesCompany),
     [salesByCompany, salesCompany],
   );
   const salesGrand = salesByCompanyFiltered.reduce((s, r) => s + r.total, 0);
@@ -265,12 +278,23 @@ function ReportsPage() {
         if (isNaN(t) || t < fromTs || t > toTs) return false;
         if (colCustomer !== "all" && r.customerId !== colCustomer) return false;
         if (colMethod !== "all" && (r.method || "") !== colMethod) return false;
-        if (colArea !== "all" && (customerAreaMap.get(r.customerId) || "") !== colArea) return false;
+        if (colArea !== "all" && (customerAreaMap.get(r.customerId) || "") !== colArea)
+          return false;
         return true;
       })
       .map(({ customerId: _c, ...rest }) => rest)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [db.payments, db.invoices, colFrom, colTo, colCustomer, colMethod, colArea, colSource, customerAreaMap]);
+  }, [
+    db.payments,
+    db.invoices,
+    colFrom,
+    colTo,
+    colCustomer,
+    colMethod,
+    colArea,
+    colSource,
+    customerAreaMap,
+  ]);
 
   const collectionTotal = collectionRows.reduce((s, r) => s + r.amount, 0);
   const collectionMethods = useMemo(() => {
@@ -317,8 +341,7 @@ function ReportsPage() {
         .map((c) => ({
           ...c,
           rows: c.rows.filter(
-            (r) =>
-              r.name.toLowerCase().includes(q) || r.pack.toLowerCase().includes(q),
+            (r) => r.name.toLowerCase().includes(q) || r.pack.toLowerCase().includes(q),
           ),
         }))
         .filter((c) => c.rows.length > 0);
@@ -397,11 +420,7 @@ function ReportsPage() {
                   >
                     Select all
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedAreas(new Set())}
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedAreas(new Set())}>
                     Clear
                   </Button>
                   <Button
@@ -453,10 +472,7 @@ function ReportsPage() {
                           {g.rows.length} customers · Outstanding {fmt(subtotal)}
                         </p>
                       </div>
-                      <Button
-                        size="sm"
-                        onClick={() => setPrintPayload({ kind: "area", group: g })}
-                      >
+                      <Button size="sm" onClick={() => setPrintPayload({ kind: "area", group: g })}>
                         <Printer /> Print
                       </Button>
                     </div>
@@ -497,12 +513,38 @@ function ReportsPage() {
                   <Input type="date" value={colTo} onChange={(e) => setColTo(e.target.value)} />
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => { setColFrom(today); setColTo(today); }}>Today</Button>
-                  <Button variant="outline" size="sm" onClick={() => {
-                    const d = new Date(); d.setDate(d.getDate() - 6);
-                    setColFrom(d.toISOString().slice(0, 10)); setColTo(today);
-                  }}>Last 7 days</Button>
-                  <Button variant="outline" size="sm" onClick={() => { setColFrom(firstOfMonth); setColTo(today); }}>This month</Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setColFrom(today);
+                      setColTo(today);
+                    }}
+                  >
+                    Today
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const d = new Date();
+                      d.setDate(d.getDate() - 6);
+                      setColFrom(d.toISOString().slice(0, 10));
+                      setColTo(today);
+                    }}
+                  >
+                    Last 7 days
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setColFrom(firstOfMonth);
+                      setColTo(today);
+                    }}
+                  >
+                    This month
+                  </Button>
                 </div>
                 <div className="min-w-[180px]">
                   <label className="text-xs text-muted-foreground block mb-1">Customer</label>
@@ -513,7 +555,9 @@ function ReportsPage() {
                   >
                     <option value="all">All customers</option>
                     {db.customers.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -526,7 +570,9 @@ function ReportsPage() {
                   >
                     <option value="all">All areas</option>
                     {collectionAreas.map((a) => (
-                      <option key={a} value={a}>{a}</option>
+                      <option key={a} value={a}>
+                        {a}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -539,7 +585,9 @@ function ReportsPage() {
                   >
                     <option value="all">All methods</option>
                     {collectionMethods.map((m) => (
-                      <option key={m} value={m}>{m}</option>
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -557,11 +605,18 @@ function ReportsPage() {
                 </div>
                 <div className="ml-auto flex items-center gap-3">
                   <div className="text-sm text-muted-foreground">
-                    Total: <span className="font-semibold text-foreground">{fmt(collectionTotal)}</span>
+                    Total:{" "}
+                    <span className="font-semibold text-foreground">{fmt(collectionTotal)}</span>
                   </div>
                   <Button
                     onClick={() =>
-                      setPrintPayload({ kind: "collection", from: colFrom, to: colTo, area: colArea === "all" ? null : colArea, rows: collectionRows })
+                      setPrintPayload({
+                        kind: "collection",
+                        from: colFrom,
+                        to: colTo,
+                        area: colArea === "all" ? null : colArea,
+                        rows: collectionRows,
+                      })
                     }
                     disabled={collectionRows.length === 0}
                   >
@@ -592,8 +647,10 @@ function ReportsPage() {
                         <td className="py-2 px-2 whitespace-nowrap">{fmtDate(r.date)}</td>
                         <td className="py-2 px-2">{r.customerName}</td>
                         <td className="py-2 px-2">
-                          <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs ${r.source === "invoice" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
-                            {r.source === "invoice" ? (r.reference || "Invoice") : "Payment"}
+                          <span
+                            className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs ${r.source === "invoice" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}
+                          >
+                            {r.source === "invoice" ? r.reference || "Invoice" : "Payment"}
                           </span>
                         </td>
                         <td className="py-2 px-2">{r.method || "—"}</td>
@@ -602,7 +659,9 @@ function ReportsPage() {
                       </tr>
                     ))}
                     <tr className="font-semibold border-t-2">
-                      <td colSpan={5} className="py-2 px-2 text-right">Total</td>
+                      <td colSpan={5} className="py-2 px-2 text-right">
+                        Total
+                      </td>
                       <td className="py-2 px-2 text-right tabular-nums">{fmt(collectionTotal)}</td>
                     </tr>
                   </tbody>
@@ -616,12 +675,14 @@ function ReportsPage() {
             <Card className="p-5 space-y-4">
               <div className="flex flex-wrap items-end gap-3">
                 <div className="flex flex-wrap gap-2">
-                  {([
-                    { k: "today", l: "Today" },
-                    { k: "week", l: "This week" },
-                    { k: "month", l: "This month" },
-                    { k: "custom", l: "Custom" },
-                  ] as { k: SalesPreset; l: string }[]).map((p) => (
+                  {(
+                    [
+                      { k: "today", l: "Today" },
+                      { k: "week", l: "This week" },
+                      { k: "month", l: "This month" },
+                      { k: "custom", l: "Custom" },
+                    ] as { k: SalesPreset; l: string }[]
+                  ).map((p) => (
                     <Button
                       key={p.k}
                       size="sm"
@@ -636,11 +697,19 @@ function ReportsPage() {
                   <>
                     <div>
                       <label className="text-xs text-muted-foreground block mb-1">From</label>
-                      <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} />
+                      <Input
+                        type="date"
+                        value={customFrom}
+                        onChange={(e) => setCustomFrom(e.target.value)}
+                      />
                     </div>
                     <div>
                       <label className="text-xs text-muted-foreground block mb-1">To</label>
-                      <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} />
+                      <Input
+                        type="date"
+                        value={customTo}
+                        onChange={(e) => setCustomTo(e.target.value)}
+                      />
                     </div>
                   </>
                 )}
@@ -653,17 +722,25 @@ function ReportsPage() {
                   >
                     <option value="all">All companies</option>
                     {salesCompanyOptions.map((c) => (
-                      <option key={c} value={c}>{c}</option>
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div className="ml-auto flex items-center gap-3">
                   <span className="text-sm text-muted-foreground">
-                    {from} → {to} · Total: <span className="font-semibold text-foreground">{fmt(salesGrand)}</span>
+                    {from} → {to} · Total:{" "}
+                    <span className="font-semibold text-foreground">{fmt(salesGrand)}</span>
                   </span>
                   <Button
                     onClick={() =>
-                      setPrintPayload({ kind: "sales-company", from, to, rows: salesByCompanyFiltered })
+                      setPrintPayload({
+                        kind: "sales-company",
+                        from,
+                        to,
+                        rows: salesByCompanyFiltered,
+                      })
                     }
                     disabled={salesByCompanyFiltered.length === 0}
                   >
@@ -776,8 +853,8 @@ function ReportsPage() {
 
               <p className="text-xs text-muted-foreground">
                 Opening = stock at start of {msMonthLabel}. Purchases & Sales are net of returns.
-                Closing = Opening + Purchases − Sales. Assumes no manual stock adjustments after
-                the period.
+                Closing = Opening + Purchases − Sales. Assumes no manual stock adjustments after the
+                period.
               </p>
 
               {msCompanies.length === 0 ? (
@@ -791,8 +868,7 @@ function ReportsPage() {
                           <h3 className="font-semibold">{c.company}</h3>
                           <p className="text-xs text-muted-foreground">
                             {c.rows.length} products · Opening {c.totals.opening} · Purchased{" "}
-                            {c.totals.purchased} · Sold {c.totals.sold} · Closing{" "}
-                            {c.totals.closing}
+                            {c.totals.purchased} · Sold {c.totals.sold} · Closing {c.totals.closing}
                           </p>
                         </div>
                         <Button
@@ -838,9 +914,7 @@ function ReportsPage() {
                                 Total
                               </td>
                               <td className="px-3 text-right tabular-nums">{c.totals.opening}</td>
-                              <td className="px-3 text-right tabular-nums">
-                                {c.totals.purchased}
-                              </td>
+                              <td className="px-3 text-right tabular-nums">{c.totals.purchased}</td>
                               <td className="px-3 text-right tabular-nums">{c.totals.sold}</td>
                               <td className="px-3 text-right tabular-nums">{c.totals.closing}</td>
                             </tr>
@@ -867,7 +941,9 @@ function ReportsPage() {
                   >
                     <option value="all">All companies</option>
                     {quotationAll.map((c) => (
-                      <option key={c.company} value={c.company}>{c.company}</option>
+                      <option key={c.company} value={c.company}>
+                        {c.company}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -882,7 +958,9 @@ function ReportsPage() {
                   />
                 </div>
                 <Button
-                  onClick={() => setPrintPayload({ kind: "quotation", companies: quotationCompanies })}
+                  onClick={() =>
+                    setPrintPayload({ kind: "quotation", companies: quotationCompanies })
+                  }
                   disabled={quotationCompanies.length === 0}
                 >
                   <Printer /> Print
@@ -937,13 +1015,13 @@ function ReportsPage() {
       </div>
 
       {/* ---------------- PRINT AREA ---------------- */}
-      {printPayload && typeof document !== "undefined" &&
-        createPortal(
+      {printPayload && typeof document !== "undefined" && (
+        <ConditionalPortal>
           <div className="print-area hidden print:block">
-          <PrintContent payload={printPayload} company={db.company} />
-          </div>,
-          document.body,
-        )}
+            <PrintContent payload={printPayload} company={db.company} />
+          </div>
+        </ConditionalPortal>
+      )}
     </>
   );
 }
@@ -962,7 +1040,10 @@ function PrintContent({
     return (
       <>
         {payload.groups.map((g, i) => (
-          <div key={g.area} style={{ pageBreakAfter: i === payload.groups.length - 1 ? "auto" : "always" }}>
+          <div
+            key={g.area}
+            style={{ pageBreakAfter: i === payload.groups.length - 1 ? "auto" : "always" }}
+          >
             <AreaSheet group={g} company={company} />
           </div>
         ))}
@@ -1059,7 +1140,9 @@ function AreaSheet({
             <th style={{ textAlign: "left", padding: "6px 4px" }}>Customer</th>
             <th style={{ textAlign: "left", padding: "6px 4px" }}>Phone</th>
             <th style={{ textAlign: "right", padding: "6px 4px", width: "18%" }}>Outstanding</th>
-            <th style={{ textAlign: "right", padding: "6px 4px", width: "22%" }}>Payment received</th>
+            <th style={{ textAlign: "right", padding: "6px 4px", width: "22%" }}>
+              Payment received
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -1147,9 +1230,7 @@ function MonthlyStockSheet({
               <td style={{ padding: "4px", textAlign: "right" }}>{r.opening}</td>
               <td style={{ padding: "4px", textAlign: "right" }}>{r.purchased}</td>
               <td style={{ padding: "4px", textAlign: "right" }}>{r.sold}</td>
-              <td style={{ padding: "4px", textAlign: "right", fontWeight: 600 }}>
-                {r.closing}
-              </td>
+              <td style={{ padding: "4px", textAlign: "right", fontWeight: 600 }}>{r.closing}</td>
             </tr>
           ))}
           <tr style={{ borderTop: "1.5px solid #000", fontWeight: 700 }}>
@@ -1164,8 +1245,8 @@ function MonthlyStockSheet({
         </tbody>
       </table>
       <p style={{ fontSize: 9, marginTop: 16, color: "#555" }}>
-        Opening = stock at start of {monthLabel}. Purchases & Sales are net of returns. Closing
-        = Opening + Purchases − Sales.
+        Opening = stock at start of {monthLabel}. Purchases & Sales are net of returns. Closing =
+        Opening + Purchases − Sales.
       </p>
     </div>
   );
@@ -1183,8 +1264,13 @@ function CollectionSheet({
     <div style={{ fontFamily: "system-ui, sans-serif", color: "#000", padding: "4mm" }}>
       <PrintHeader title="Payment Collection" company={company} />
       <p style={{ fontSize: 12, margin: "4px 0 12px" }}>
-        {payload.area && (<>Area: <strong>{payload.area}</strong> · </>)}
-        Date range: <strong>{payload.from}</strong> to <strong>{payload.to}</strong> · {payload.rows.length} payments
+        {payload.area && (
+          <>
+            Area: <strong>{payload.area}</strong> ·{" "}
+          </>
+        )}
+        Date range: <strong>{payload.from}</strong> to <strong>{payload.to}</strong> ·{" "}
+        {payload.rows.length} payments
       </p>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
         <thead>
@@ -1204,14 +1290,18 @@ function CollectionSheet({
               <td style={{ padding: "5px 4px" }}>{i + 1}</td>
               <td style={{ padding: "5px 4px" }}>{fmtDate(r.date)}</td>
               <td style={{ padding: "5px 4px" }}>{r.customerName}</td>
-              <td style={{ padding: "5px 4px" }}>{r.source === "invoice" ? (r.reference || "Invoice") : "Payment"}</td>
+              <td style={{ padding: "5px 4px" }}>
+                {r.source === "invoice" ? r.reference || "Invoice" : "Payment"}
+              </td>
               <td style={{ padding: "5px 4px" }}>{r.method || "—"}</td>
               <td style={{ padding: "5px 4px" }}>{r.notes || ""}</td>
               <td style={{ padding: "5px 4px", textAlign: "right" }}>{fmt(r.amount)}</td>
             </tr>
           ))}
           <tr style={{ borderTop: "1.5px solid #000", fontWeight: 700 }}>
-            <td colSpan={6} style={{ padding: "6px 4px", textAlign: "right" }}>Total collected</td>
+            <td colSpan={6} style={{ padding: "6px 4px", textAlign: "right" }}>
+              Total collected
+            </td>
             <td style={{ padding: "6px 4px", textAlign: "right" }}>{fmt(total)}</td>
           </tr>
         </tbody>
@@ -1233,7 +1323,10 @@ function QuotationSheet({
       {companies.map((c, idx) => (
         <div
           key={c.company}
-          style={{ pageBreakAfter: idx === companies.length - 1 ? "auto" : "always", marginBottom: 16 }}
+          style={{
+            pageBreakAfter: idx === companies.length - 1 ? "auto" : "always",
+            marginBottom: 16,
+          }}
         >
           <p style={{ fontSize: 13, margin: "4px 0 8px" }}>
             Company: <strong>{c.company}</strong> · {c.rows.length} products
@@ -1263,4 +1356,3 @@ function QuotationSheet({
     </div>
   );
 }
-
