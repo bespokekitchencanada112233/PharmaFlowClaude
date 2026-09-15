@@ -1,12 +1,29 @@
 // NOTE: package.json pins electron to exactly 30.5.1. Electron 33+ (Chromium
 // 148, confirmed on 33.4.11 and 35.7.5) has a renderer bug where any
-// HTMLElement.focus() call on this app's page permanently hangs the
-// renderer's JS thread the instant TanStack Router's <RouterProvider> is
-// mounted -- reproduced with a minimal root-only route tree, ruled out our
-// own code (CSS, React, Supabase, service worker, GPU/accessibility/autofill
-// switches all irrelevant). Only fix found was downgrading Electron itself.
-// Do not bump this past 30.x without re-testing that typing in the login
-// form actually works in a real packaged build.
+// programmatic HTMLElement.focus() call on this app's page permanently
+// hangs the renderer's JS thread the instant TanStack Router's
+// <RouterProvider> is mounted -- reproduced with a minimal root-only route
+// tree, ruled out our own code (CSS, React, Supabase, service worker,
+// GPU/accessibility/autofill switches all irrelevant). Downgrading Electron
+// fixed this specific case (confirmed: typing a full email + password in
+// the login form). Do not bump this past 30.x without re-testing that.
+//
+// KNOWN UNRESOLVED ISSUE: opening a dialog via a REAL mouse click (as a
+// user actually does -- reproduced with webContents.sendInputEvent, never
+// with a synthetic element.click(), which is why earlier testing missed
+// it) still hangs the renderer on this same Electron version, even with:
+//   - element.focus() neutered globally (src/lib/electron-shims.ts)
+//   - the triggering button prevented from taking native focus on mousedown
+//   - Radix FocusScope's trapping and useFocusGuards both force-disabled
+//   - a fully custom, Radix-free dialog with zero focusable content inside
+// A plain toast notification (also portal-based) does NOT hang on the same
+// real click, so it's specific to the dialog's fixed/centered overlay
+// content somehow, not to focus, portals, or re-renders in general -- but
+// the exact trigger inside that remains unidentified. Next steps for
+// whoever picks this up: bisect the dialog's own CSS/layout (position:
+// fixed, centering transform, z-index, size) against the working toast to
+// find what's actually different, ideally with DevTools open on a REAL
+// click (not scripted) to catch a stack trace at the point of the hang.
 const { app, BrowserWindow, Menu, shell } = require("electron");
 const path = require("path");
 const http = require("http");
