@@ -31,6 +31,8 @@ export default defineConfig({
       "@/components/ui/alert-dialog": resolve(__dirname, "src/components/ui/alert-dialog.electron.tsx"),
       "@/components/ui/dropdown-menu": resolve(__dirname, "src/components/ui/dropdown-menu.electron.tsx"),
       "@/components/ui/sheet": resolve(__dirname, "src/components/ui/sheet.electron.tsx"),
+      "@/components/ui/select": resolve(__dirname, "src/components/ui/select.electron.tsx"),
+      "@/components/ui/popover": resolve(__dirname, "src/components/ui/popover.electron.tsx"),
     },
   },
   build: {
