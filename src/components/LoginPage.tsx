@@ -7,21 +7,8 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Cloud } from "lucide-react";
 import { lovable } from "@/integrations/lovable";
-import { supabase } from "@/integrations/supabase/client";
 
 const IS_ELECTRON = import.meta.env.VITE_IS_ELECTRON === "true";
-const PUBLISHED_URL =
-  (import.meta.env.VITE_PUBLISHED_URL as string | undefined) ||
-  "https://umarmedicine.lovable.app";
-
-function randomState() {
-  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
-    return [...crypto.getRandomValues(new Uint8Array(16))]
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-  }
-  return Math.random().toString(36).slice(2);
-}
 
 export function LoginPage() {
   const { signIn } = useAuth();
@@ -45,39 +32,6 @@ export function LoginPage() {
   async function signInGoogle() {
     setBusy(true);
     try {
-      if (IS_ELECTRON && window.electronAPI?.signInWithGoogle) {
-        // Desktop flow: open the published-app broker in a separate Electron
-        // window, capture access/refresh tokens from the redirect, then set
-        // the Supabase session on the desktop window.
-        const state = randomState();
-        const redirectUri = PUBLISHED_URL;
-        const params = new URLSearchParams({
-          provider: "google",
-          redirect_uri: redirectUri,
-          state,
-        });
-        const brokerUrl = `${PUBLISHED_URL}/~oauth/initiate?${params.toString()}`;
-        const result = await window.electronAPI.signInWithGoogle(
-          brokerUrl,
-          redirectUri,
-        );
-        if (!result.ok) {
-          toast.error(result.error || "Google sign-in failed");
-          return;
-        }
-        const { error } = await supabase.auth.setSession({
-          access_token: result.access_token,
-          refresh_token: result.refresh_token,
-        });
-        if (error) {
-          toast.error(error.message || "Could not start session");
-          return;
-        }
-        toast.success("Signed in with Google");
-        return;
-      }
-
-      // Web flow (unchanged)
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
       });
@@ -134,28 +88,30 @@ export function LoginPage() {
           </Button>
         </form>
 
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">or</span>
-          </div>
-        </div>
+        {!IS_ELECTRON && (
+          <>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">or</span>
+              </div>
+            </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          disabled={busy}
-          onClick={signInGoogle}
-        >
-          Continue with Google
-        </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              disabled={busy}
+              onClick={signInGoogle}
+            >
+              Continue with Google
+            </Button>
+          </>
+        )}
 
-        <p className="text-center text-xs text-muted-foreground">
-          New signups are disabled.
-        </p>
+        <p className="text-center text-xs text-muted-foreground">New signups are disabled.</p>
       </Card>
     </div>
   );

@@ -1,13 +1,6 @@
-import {
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type KeyboardEvent,
-} from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { Input } from "@/components/ui/input";
+import { ConditionalPortal } from "@/components/ConditionalPortal";
 import type { Supplier } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -81,9 +74,7 @@ export function SupplierCombobox({
   }, [open]);
 
   function commit(s?: Supplier) {
-    const pick =
-      s ??
-      (active >= 0 ? matches[active] : matches[0]);
+    const pick = s ?? (active >= 0 ? matches[active] : matches[0]);
     if (!pick) return;
     justCommittedRef.current = true;
     onChange(pick.id);
@@ -154,10 +145,8 @@ export function SupplierCombobox({
         placeholder={placeholder ?? "Search supplier…"}
         autoComplete="off"
       />
-      {open &&
-        rect &&
-        typeof document !== "undefined" &&
-        createPortal(
+      {open && rect && typeof document !== "undefined" && (
+        <ConditionalPortal>
           <div
             style={{
               position: "fixed",
@@ -172,9 +161,7 @@ export function SupplierCombobox({
             className="max-h-72 overflow-auto rounded-md border bg-popover shadow-md"
           >
             {matches.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-muted-foreground">
-                No suppliers found
-              </div>
+              <div className="px-3 py-2 text-sm text-muted-foreground">No suppliers found</div>
             ) : (
               matches.map((s, i) => (
                 <button
@@ -191,14 +178,12 @@ export function SupplierCombobox({
                   onMouseEnter={() => setActive(i)}
                   className={cn(
                     "w-full text-left px-3 py-2 text-sm flex justify-between gap-3 items-center",
-                    i === active
-                      ? "bg-accent text-accent-foreground"
-                      : "hover:bg-muted",
+                    i === active ? "bg-accent text-accent-foreground" : "hover:bg-muted",
                   )}
                 >
                   <span className="truncate font-medium">{s.name}</span>
                   {(() => {
-                    const suffix = getSuffix ? getSuffix(s) : s.phone ?? "";
+                    const suffix = getSuffix ? getSuffix(s) : (s.phone ?? "");
                     return suffix ? (
                       <span
                         className={cn(
@@ -213,9 +198,9 @@ export function SupplierCombobox({
                 </button>
               ))
             )}
-          </div>,
-          document.body,
-        )}
+          </div>
+        </ConditionalPortal>
+      )}
     </div>
   );
 }

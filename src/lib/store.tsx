@@ -29,7 +29,7 @@ import {
   loadSnapshot, saveSnapshot, loadQueue, enqueueOp,
   getLastSync, QUEUE_HARD_LIMIT, QUEUE_SOFT_LIMIT, saveQueue,
   type QueuedOpKind,
-} from "./offline/storage";
+} from "@/lib/offline/storage";
 import { processQueue } from "./offline/sync";
 
 const initial: DBShape = {
