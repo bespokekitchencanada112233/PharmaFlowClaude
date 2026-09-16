@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { loadQueue, saveQueue, MAX_ATTEMPTS, type QueuedOp } from "./storage";
+import { loadQueue, saveQueue, MAX_ATTEMPTS, type QueuedOp } from "@/lib/offline/storage";
 import type {
   Invoice,
   InvoiceItem,
@@ -454,5 +454,5 @@ export async function processQueue(userId: string): Promise<SyncResult> {
 }
 
 // Legacy export retained for imports that referenced the old type name.
-export type { QueuedOp as QueuedInvoice } from "./storage";
+export type { QueuedOp as QueuedInvoice } from "@/lib/offline/storage";
 export type { DBShape };

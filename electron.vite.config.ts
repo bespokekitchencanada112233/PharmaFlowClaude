@@ -33,6 +33,7 @@ export default defineConfig({
       "@/components/ui/sheet": resolve(__dirname, "src/components/ui/sheet.electron.tsx"),
       "@/components/ui/select": resolve(__dirname, "src/components/ui/select.electron.tsx"),
       "@/components/ui/popover": resolve(__dirname, "src/components/ui/popover.electron.tsx"),
+      "@/lib/offline/storage": resolve(__dirname, "src/lib/offline/storage.electron.ts"),
     },
   },
   build: {

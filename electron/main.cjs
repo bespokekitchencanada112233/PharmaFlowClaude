@@ -26,10 +26,11 @@
 // build (Popover, DropdownMenu, Sheet, AlertDialog, etc.) needs the same
 // treatment -- check for this class of hang if one of those starts
 // freezing on a real click.
-const { app, BrowserWindow, Menu, shell } = require("electron");
+const { app, BrowserWindow, Menu, shell, ipcMain } = require("electron");
 const path = require("path");
 const http = require("http");
 const fs = require("fs");
+const { initDb, dbGet, dbSet, dbDel } = require("./db.cjs");
 
 const CLIENT_DIR = path.join(__dirname, "..", "dist", "client");
 const APP_ICON = path.join(CLIENT_DIR, "icon-512.png");
@@ -132,6 +133,7 @@ function createWindow(port) {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      preload: path.join(__dirname, "preload.cjs"),
     },
   });
 
@@ -169,12 +171,17 @@ if (!gotSingleInstanceLock) {
     }
   });
 
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
     if (!fs.existsSync(path.join(CLIENT_DIR, "index.html"))) {
       throw new Error(
         `Electron client build not found at ${CLIENT_DIR}. Run "npm run electron:build" first.`,
       );
     }
+
+    await initDb(app.getPath("userData"));
+    ipcMain.handle("db:get", (_event, key) => dbGet(key));
+    ipcMain.handle("db:set", (_event, key, value) => dbSet(key, value));
+    ipcMain.handle("db:del", (_event, key) => dbDel(key));
 
     Menu.setApplicationMenu(buildMenu());
     startServerAndWindow();
