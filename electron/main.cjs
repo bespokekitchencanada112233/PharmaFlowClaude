@@ -151,13 +151,33 @@ function createWindow(port) {
   });
 }
 
+// Fixed, not 0/random: the login session is stored in browser storage keyed
+// to this exact origin (http://127.0.0.1:PORT). A different port on every
+// launch meant a different storage partition each time -- last session's
+// saved login was invisible to the new one, forcing a fresh sign-in every
+// single time the app opened. Falls back to a random port only if this one
+// is somehow already taken (session then won't persist across restarts
+// until it frees up, but the app still opens).
+const APP_PORT = 47821;
+
 function startServerAndWindow() {
   server = createStaticServer(CLIENT_DIR);
-  server.listen(0, "127.0.0.1", () => {
+
+  const onListening = () => {
     const { port } = server.address();
     console.log(`[electron] serving ${CLIENT_DIR} on http://127.0.0.1:${port}/`);
     createWindow(port);
+  };
+
+  server.once("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+      console.warn(`[electron] port ${APP_PORT} in use, falling back to a random port`);
+      server.listen(0, "127.0.0.1", onListening);
+    } else {
+      throw err;
+    }
   });
+  server.listen(APP_PORT, "127.0.0.1", onListening);
 }
 
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
